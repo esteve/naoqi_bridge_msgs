@@ -1,7 +1,17 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
+
 project(naoqi_bridge_msgs)
 
-set(MESSAGE_DEPS
+if(NOT WIN32)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wpedantic")
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+set(message_deps
+  builtin_interfaces
   actionlib_msgs
   sensor_msgs
   nav_msgs
@@ -9,50 +19,30 @@ set(MESSAGE_DEPS
   std_msgs
   geometry_msgs)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS genmsg message_generation ${MESSAGE_DEPS})
-
+foreach(msg_dep ${message_deps})
+  find_package(${msg_dep} REQUIRED)
+endforeach()
 
 # Find all the messages files
-FILE(GLOB MSG_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/msg"
+file(GLOB msg_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_SOURCE_DIR}/msg/*.msg")
 
-## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  ${MSG_FILES}
-)
-
 # Find all the service files
-FILE(GLOB SRV_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/srv"
+FILE(GLOB srv_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_SOURCE_DIR}/srv/*.srv")
 
-## Generate messages in the 'srv' folder
-add_service_files(
-  FILES
-  ${SRV_FILES}
-)
-
 # Find all the action files
-FILE(GLOB ACTION_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/action"
+file(GLOB action_files RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_SOURCE_DIR}/action/*.action")
 
-## Generate messages in the 'action' folder
-add_action_files(
-  FILES
-  ${ACTION_FILES}
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+  ${srv_files}
+#  ${action_files}
+  DEPENDENCIES ${message_deps}
+  ADD_LINTER_TESTS
 )
 
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   ${MESSAGE_DEPS}
-)
+ament_export_dependencies(rosidl_default_runtime)
 
-catkin_package(
-  CATKIN_DEPENDS genmsg message_runtime ${MESSAGE_DEPS}
-)
-
-
+ament_package()
